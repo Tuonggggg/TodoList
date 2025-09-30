@@ -1,23 +1,36 @@
 import express from "express";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 import tasksRouter from "./routes/tasksRouter.js";
 import { connectDB } from "./config/db.js";
 import cors from "cors";
+import path from "path";
 
-dotenv.config()
+dotenv.config();
 
+const PORT = process.env.PORT || 3000;
+const __dirname = path.resolve();
 const app = express();
-const PORT = process.env.PORT || 3000
 
 // middleware
-app.use(express.json())
-app.use(cors({origin: 'http://localhost:5173'}))
+app.use(express.json());
+if(process.env.NODE_ENV !== "production") {
+  app.use(cors({ origin: "http://localhost:5173" }));
+}
+
 
 app.use("/api/tasks/", tasksRouter);
 
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  });
+}
+
+// connect to db and start server
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server đang chạy tại http://localhost:${PORT}`);
   });
-})
-
+});
